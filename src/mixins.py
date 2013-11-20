@@ -77,3 +77,34 @@ class WebResourceMixin(object):
                 elif unpacked_row[unique_index] not in used_indexes:
                     yield unpacked_row
                     used_indexes.append(unpacked_row[unique_index])
+
+
+class RedisMixin(object):
+    """
+        Mixin that wraps Redis calls.
+    """
+
+    def redis_exists(self, key):
+        """
+            Ensure that key exists in Redis
+        """
+        assert(hasattr(self, "redis_connection"))
+        return self.redis_connection.key
+
+    def redis_write(self, key, obj, ensure=True):
+        """
+            Write a hash to Redis
+        """
+        if ensure and self.redis_exists(key):
+            return
+
+        assert(hasattr(self, "redis_connection"))
+        self.redis_connection.hmset(key, obj)
+
+    def redis_read(self, key):
+        """
+            Read a hash from Redis
+        """
+
+        assert(hasattr(self, "redis_connection"))
+        return self.redis_connection.hgetall(key)
