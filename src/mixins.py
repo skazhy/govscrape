@@ -20,7 +20,7 @@ class MarshalMixin(object):
     def load(self, Cls, filename):
         assert(os.path.exists(filename))
         f = open(filename)
-        items = [Cls(row.strip().split(",")) for row in f]
+        items = [Cls(row.strip().split(","), clean=True) for row in f]
         f.close()
         return items
 
@@ -43,11 +43,26 @@ class WebResourceMixin(object):
 
         return row.strip().replace('"', "")
 
-    def _unpack_row(self, row):
+    def _unpack_csv_row(self, row):
         # TODO: use a custom csv Dialect here?
         m = re.search(r"[a-zA-Z]+\(([a-z0-9-, ]+)\)", row)
         if m:
             return m.group(1).split(",")
+
+    def _unpack_json_row(self, row):
+        # Format used by the website is so arcane, that it is easier to
+        # unpack by hack and slash than with regex
+        opener = row.index("({")
+        closer = row.index("})")
+        unpacked = []
+        for fakepair in row[opener+2:closer].split(":"):
+            if "," not in fakepair:
+                unpacked.append(fakepair)
+                continue
+            sfp = fakepair.rpartition(",")
+            unpacked.append(sfp[0])
+            unpacked.append(sfp[2])
+        return unpacked
 
     def fetch(self, urn, id=None):
         """
@@ -56,23 +71,31 @@ class WebResourceMixin(object):
         """
 
         uri = "%s%s" % (self.BASE_URL, urn)
-        document = BeautifulSoup(urlopen(uri).read())
+        raw_data = urlopen(uri).read()
+
+        # BeautifulSoup is bad with finding <body> in some cases, so we need
+        # To trim all the lines that are outside of <body></body>
+        body_start = raw_data.index("</script>", raw_data.index("<body")) + 9
+        body_end = raw_data.index("</body", body_start)
+
+        document = BeautifulSoup(raw_data[body_start:body_end])
         if id:
             return document.find(id=id)
         return document
 
-    def stream_csv(self, raw_doc, unique_index=None):
+    def stream_csv(self, raw_doc, unique_index=None, format="csv"):
         """
             Take a large string chunk of csv, unpack it and yield it out.
         """
+        unpacker = self._unpack_csv_row if format == "csv" else self._unpack_json_row
         used_indexes = []
         for row in raw_doc.split("\n"):
             cleaned_row = self._clean_row(row)
             if not row:
                 continue
-            unpacked_row = self._unpack_row(cleaned_row)
+            unpacked_row = unpacker(cleaned_row)
             if unpacked_row:
-                if not unique_index:
+                if unique_index is None:
                     yield unpacked_row
                 elif unpacked_row[unique_index] not in used_indexes:
                     yield unpacked_row

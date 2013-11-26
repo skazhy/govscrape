@@ -9,6 +9,47 @@ class Resource(object):
     pass
 
 
+class Deputy(Resource):
+    """
+        Deputy resource.
+    """
+
+    SRC_OBJ_MAP = {"name": "name", "sname": "surname", "unid": "id"}
+    DUMP_FIELDS = ["id", "name", "surname"]
+
+    def __init__(self, lst, clean=False):
+        if clean:
+            self._dct = dict(zip(self.DUMP_FIELDS, lst))
+            return
+
+        ilst = iter(lst)
+        _raw_dct = dict()
+
+        if not lst[0]:
+            ilst.next()  # drop the first (empty) element, if it exists
+
+        while True:
+            try:
+                key = next(ilst)
+                value = next(ilst)
+                _raw_dct[key] = value
+            except StopIteration:
+                break
+
+        self._dct = {}
+        for source_key, obj_key in self.SRC_OBJ_MAP.items():
+            self._dct[obj_key] = _raw_dct[source_key]
+
+    def __unicode__(self):
+        return str(self._dct)
+
+    def __str__(self):
+        return str(self._dct)
+
+    def __repr__(self):
+        return "%s\n" % ",".join(self._dct[x] for x in self.DUMP_FIELDS)
+
+
 class Session(Resource):
     """
         Session resource.
