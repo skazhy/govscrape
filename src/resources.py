@@ -1,6 +1,6 @@
 from datetime import date
 
-from base import Resource
+from base import Container, Resource
 
 
 class Deputy(Resource):
@@ -11,7 +11,7 @@ class Deputy(Resource):
     SRC_OBJ_MAP = {"name": "name", "sname": "surname", "unid": "id"}
     DUMP_FIELDS = ["id", "name", "surname"]
 
-    def __init__(self, lst, clean=False):
+    def __init__(self, lst, clean=False, **kwargs):
         if clean:
             self._dct = dict(zip(self.DUMP_FIELDS, lst))
             return
@@ -44,14 +44,19 @@ class Deputy(Resource):
         return "%s\n" % ",".join(self._dct[x] for x in self.DUMP_FIELDS)
 
 
-class Session(Resource):
+class Session(Resource, Container):
     """
         Session resource.
+        Works both as a resource (an object in calendar container),
+        And as a container (for voting objects)
     """
 
     def __init__(self, lst, **kwargs):
+        self.unpack_format = "csv"
+        self._items = None
         self._date = None
         self._lst = lst
+        self.term = kwargs["term"]
 
     def __unicode__(self):
         return "%s on %s" % (self._map_type(), self.date)
@@ -86,6 +91,23 @@ class Session(Resource):
     def id(self):
         return self._lst[6]
 
+    @property
+    def _filename(self):
+        return "session-%s.csv" % self.id
+
+    @property
+    def votings(self):
+        if self._items is None:
+            self.Resource = Voting
+            self._items = self.load(unique_index=None)
+
+        return self._items
+
+    @property
+    def urn(self):
+        return "LIVS%s/saeimalivs2_dk.nsf/DK?ReadForm&calendar=1%s" % (self.term, self.id)
+
+
     def _map_type(self):
         return {
             "1": "Regular session",
@@ -94,3 +116,11 @@ class Session(Resource):
             "5": "Q&A session",
             "6": "Emergency session",
         }.get(self._lst[4], "Unknown session type")
+
+
+class Voting(Resource):
+    def __init__(self, lst, **kwargs):
+        self._lst = lst
+
+    def __str__(self):
+        return self._lst[0]

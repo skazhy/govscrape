@@ -17,10 +17,10 @@ class MarshalMixin(object):
             f.write(repr(item))
         f.close()
 
-    def load(self, Cls, filename):
+    def load(self, Cls, filename, **kw):
         assert(os.path.exists(filename))
         f = open(filename)
-        items = [Cls(row.strip().split(","), clean=True) for row in f]
+        items = [Cls(row.strip().split(","), clean=True, **kw) for row in f]
         f.close()
         return items
 
@@ -45,7 +45,7 @@ class WebResourceMixin(object):
 
     def _unpack_csv_row(self, row):
         # TODO: use a custom csv Dialect here?
-        m = re.search(r"[a-zA-Z]+\(([a-z0-9-, ]+)\)", row)
+        m = re.search(r"[a-zA-Z]+\((.*)\);$", row)
         if m:
             return m.group(1).split(",")
 

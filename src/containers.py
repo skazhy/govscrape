@@ -11,14 +11,14 @@ class Calendar(Container):
 
     def __init__(self, term):
         super(Calendar, self).__init__(term)
-        self._filename = "sessions-%s.csv" % term
+        self._filename = "calendar-%s.csv" % term
         self.Resource = Session
         self.unpack_format = "csv"  # raw data is stored in JSON in the website
 
     @property
     def sessions(self):
         if self._items is None:
-            self.load()
+            self.load(term=self.term)
         return self._items
 
     @property
