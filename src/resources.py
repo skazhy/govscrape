@@ -55,7 +55,7 @@ class Session(Resource):
         Session resource.
     """
 
-    def __init__(self, lst):
+    def __init__(self, lst, **kwargs):
         self._date = None
         self._lst = lst
 

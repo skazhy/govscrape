@@ -25,7 +25,7 @@ class Container(WebResourceMixin, MarshalMixin):
             self._items = super(Container, self).load(self.Resource, self._filename)
             return self._items
 
-        full_url = self.urn + uri if uri else ""
+        full_url = self.urn + (uri if uri else "")
         raw = self.fetch(full_url, id="viewHolderText").contents[0]
         self._items = [self.Resource(r) for r in self.stream_csv(str(raw), unique_index=-1, format=self.unpack_format)]
 
@@ -98,7 +98,7 @@ class Deputies(Container):
 
         # TODO: make this a decorator
         if self._items is None and os.path.exists(self._filename):
-            self._items = super(Container, self).load(self.Resource, self._filename)
+            self._items = super(Deputies, self).load(self.Resource, self._filename)
             return self._items
 
         items = []
