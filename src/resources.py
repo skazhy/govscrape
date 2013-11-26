@@ -1,12 +1,6 @@
 from datetime import date
 
-
-class Resource(object):
-    """
-        Base class for resources.
-    """
-
-    pass
+from base import Resource
 
 
 class Deputy(Resource):
